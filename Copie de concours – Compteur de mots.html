@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Copie de concours – Compteur de mots</title>
+<style>
+:root{--bg:#f4f1ea;--card:#fffdf8;--ink:#1d1d1f;--mut:#6b6b70;--line:#d9d5cb;--acc:#1f4fd8;--ok:#1d8a4e;--bad:#c0392b;--rule:#cdd9f3;--margin:#e4a3a3;--cell:#ece8de;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#16171a;--card:#202226;--ink:#ececec;--mut:#9a9aa2;--line:#35373d;--acc:#7da2ff;--ok:#4cc380;--bad:#ff7b6b;--rule:#2c3550;--margin:#6a3a3a;--cell:#2a2d33}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#16171a;--card:#202226;--ink:#ececec;--mut:#9a9aa2;--line:#35373d;--acc:#7da2ff;--ok:#4cc380;--bad:#ff7b6b;--rule:#2c3550;--margin:#6a3a3a;--cell:#2a2d33}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:820px;margin:0 auto;padding:14px}
+h1{font-size:18px;margin:4px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+label{font-size:12px;color:var(--mut);display:block;margin-bottom:3px}
+input,select{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.head{border:2px solid var(--ink);border-radius:6px;padding:10px;margin-bottom:12px}
+.head .t{text-align:center;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:15px}
+.head .s{text-align:center;color:var(--mut);margin-bottom:8px}
+.head input{border:0;border-bottom:1px dashed var(--line);border-radius:0;background:transparent}
+.paper{position:relative}
+textarea{width:100%;min-height:340px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:6px 10px 6px 44px;color:var(--ink);font:17px/32px Georgia,"Times New Roman",serif;
+background-color:var(--card);background-image:linear-gradient(90deg,transparent 34px,var(--margin) 34px,var(--margin) 35px,transparent 35px),repeating-linear-gradient(transparent,transparent 31px,var(--rule) 31px,var(--rule) 32px);background-attachment:local}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.n{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.st{font-size:13px;color:var(--mut)}
+.prog{flex:1;height:8px;background:var(--cell);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--acc);transition:width .15s}
+.ok .n{color:var(--ok)}.ok .prog i{background:var(--ok)}
+.bad .n{color:var(--bad)}.bad .prog i{background:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
+.grid div{aspect-ratio:1.3;background:var(--cell);border-radius:3px;font-size:9px;color:var(--mut);display:flex;align-items:flex-end;justify-content:flex-end;padding:1px 3px}
+.grid .f{background:var(--acc);color:#fff}
+.grid .t{outline:1px dashed var(--mut)}
+.grid .x{background:var(--bad);color:#fff}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+button{padding:9px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+button.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+#saved{font-size:12px;color:var(--mut);margin-left:auto;align-self:center}
+details summary{cursor:pointer;font-weight:600}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+</style></head>
+<body><div class="wrap">
+<h1>✍️ Copie de concours</h1>
+
+<div class="card">
+<div class="g">
+<div><label>Modèle de copie</label><select id="preset"></select></div>
+<div><label>Mots visés</label><input id="target" type="number" min="1"></div>
+<div><label>Tolérance ± %</label><input id="tol" type="number" min="0" max="50"></div>
+</div>
+<details style="margin-top:10px"><summary>Règles de comptage</summary>
+<div class="g" style="margin-top:8px">
+<div><label>Apostrophe (l’homme, j’ai)</label><select id="apo"><option value="1">1 mot</option><option value="2">2 mots</option></select></div>
+<div><label>Trait d’union (peut-être)</label><select id="hy"><option value="1">1 mot</option><option value="2">2 mots</option></select></div>
+</div>
+<p class="note">Ces règles varient selon le concours : vérifie la consigne officielle de ton épreuve et ajuste ici.</p>
+</details>
+</div>
+
+<div class="head">
+<input id="concours" class="t" aria-label="Concours" style="text-align:center;font-weight:700;text-transform:uppercase">
+<input id="epreuve" aria-label="Épreuve" style="text-align:center;color:var(--mut);margin-bottom:8px">
+<div class="g">
+<div><label>Nom / Prénom</label><input id="nom"></div>
+<div><label>N° candidat</label><input id="num"></div>
+<div><label>Session / Date</label><input id="date"></div>
+</div>
+</div>
+
+<div class="bar" id="bar">
+<div><div class="n" id="n">0</div><div class="st">mots</div></div>
+<div style="flex:1"><div class="prog"><i id="pr"></i></div><div class="st" id="st" style="margin-top:4px"></div></div>
+</div>
+
+<div class="paper"><textarea id="txt" placeholder="Commence à écrire ici…" spellcheck="true"></textarea></div>
+<div class="btns">
+<button class="p" id="copy">Copier le texte</button>
+<button id="clear">Effacer ce brouillon</button>
+<span id="saved"></span>
+</div>
+
+<div class="card" style="margin-top:12px">
+<label>Cases de mots (1 case = 1 mot, pointillés = fourchette autorisée)</label>
+<div class="grid" id="grid"></div>
+</div>
+</div>
+
+<script>
+var K="copie-concours:v1";
+var PRESETS={
+ccinp:{l:"CCINP – Contraction de texte",c:"CCINP",e:"Français – Contraction de texte",t:110,o:10},
+centrale:{l:"Centrale-Supélec – Contraction",c:"Centrale-Supélec",e:"Français – Contraction de texte",t:220,o:10},
+dissert:{l:"Dissertation (libre)",c:"Concours",e:"Français – Dissertation",t:1500,o:10},
+custom:{l:"Personnalisé",c:"Mon concours",e:"Mon épreuve",t:200,o:10}
+};
+var S={preset:"ccinp",cfg:{},texts:{},head:{nom:"",num:"",date:""},apo:"1",hy:"1"};
+function $(i){return document.getElementById(i)}
+try{var raw=localStorage.getItem(K);if(raw){var d=JSON.parse(raw);if(d&&d.preset)S=Object.assign(S,d)}}catch(e){}
+var sel=$("preset");
+Object.keys(PRESETS).forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=PRESETS[k].l;sel.appendChild(o)});
+function cfg(){var p=PRESETS[S.preset],c=S.cfg[S.preset]||{};return{c:c.c||p.c,e:c.e||p.e,t:c.t||p.t,o:c.o==null?p.o:c.o}}
+var tmr;
+function save(){
+ try{localStorage.setItem(K,JSON.stringify(S));$("saved").textContent="Enregistré ✓ "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
+ catch(e){$("saved").textContent="Sauvegarde impossible"}
+}
+function later(){$("saved").textContent="…";clearTimeout(tmr);tmr=setTimeout(save,300)}
+function count(t){
+ var n=0,L=/[\p{L}\p{N}]/u;
+ t.split(/\s+/).forEach(function(w){
+  if(!L.test(w))return;
+  var parts=[w];
+  if(S.apo==="2")parts=parts.flatMap(function(p){return p.split(/['’]/)});
+  if(S.hy==="2")parts=parts.flatMap(function(p){return p.split("-")});
+  n+=parts.filter(function(p){return L.test(p)}).length;
+ });
+ return n;
+}
+var cells=[],shown=0;
+function buildGrid(total){
+ var g=$("grid"),c=cfg(),max=Math.floor(c.t*(1+c.o/100));
+ g.innerHTML="";cells=[];
+ for(var i=1;i<=total;i++){var d=document.createElement("div");if(i%10===0)d.textContent=i;
+  if(i>c.t&&i<=max)d.className="t";cells.push(d);g.appendChild(d)}
+ shown=total;
+}
+function update(){
+ var c=cfg(),n=count($("txt").value),min=Math.ceil(c.t*(1-c.o/100)),max=Math.floor(c.t*(1+c.o/100));
+ $("n").textContent=n;
+ $("pr").style.width=Math.min(100,n/c.t*100)+"%";
+ var bar=$("bar");bar.className="bar"+(n>max?" bad":n>=min?" ok":"");
+ $("st").textContent=n>max?("Trop long : "+(n-max)+" mot(s) au-dessus de la limite ("+max+")"):
+  n>=min?("Dans la fourchette ("+min+"–"+max+") · objectif "+c.t):
+  ("Encore "+(min-n)+" mot(s) pour atteindre le minimum ("+min+") · objectif "+c.t);
+ var total=Math.min(Math.max(max,n),5000);
+ if(total!==shown)buildGrid(total);
+ for(var i=0;i<cells.length;i++){
+  var base=(i+1>c.t&&i+1<=max)?"t":"";
+  cells[i].className=(i<n?(i+1>max?"x":"f"):base);
+ }
+}
+function loadAll(){
+ var c=cfg();
+ sel.value=S.preset;$("target").value=c.t;$("tol").value=c.o;
+ $("concours").value=c.c;$("epreuve").value=c.e;
+ $("nom").value=S.head.nom;$("num").value=S.head.num;$("date").value=S.head.date;
+ $("apo").value=S.apo;$("hy").value=S.hy;
+ $("txt").value=S.texts[S.preset]||"";
+ shown=0;update();
+}
+function setCfg(k,v){var c=S.cfg[S.preset]||(S.cfg[S.preset]={});c[k]=v}
+sel.onchange=function(){S.preset=sel.value;loadAll();later()};
+$("target").oninput=function(){setCfg("t",Math.max(1,+this.value||1));shown=0;update();later()};
+$("tol").oninput=function(){setCfg("o",Math.max(0,+this.value||0));shown=0;update();later()};
+$("concours").oninput=function(){setCfg("c",this.value);later()};
+$("epreuve").oninput=function(){setCfg("e",this.value);later()};
+["nom","num","date"].forEach(function(k){$(k).oninput=function(){S.head[k]=this.value;later()}});
+$("apo").onchange=function(){S.apo=this.value;update();later()};
+$("hy").onchange=function(){S.hy=this.value;update();later()};
+$("txt").oninput=function(){S.texts[S.preset]=this.value;update();later()};
+$("copy").onclick=function(){
+ var t=$("txt");
+ function fb(){t.select();try{document.execCommand("copy")}catch(e){}flash("Copié ✓")}
+ try{navigator.clipboard.writeText(t.value).then(function(){flash("Copié ✓")},fb)}catch(e){fb()}
+};
+function flash(m){$("copy").textContent=m;setTimeout(function(){$("copy").textContent="Copier le texte"},1500)}
+var armed=false;
+$("clear").onclick=function(){
+ var b=this;
+ if(!armed){armed=true;b.textContent="Confirmer l’effacement ?";setTimeout(function(){armed=false;b.textContent="Effacer ce brouillon"},3000);return}
+ armed=false;b.textContent="Effacer ce brouillon";
+ S.texts[S.preset]="";$("txt").value="";update();save();
+};
+loadAll();
+</script>
+</body></html>
